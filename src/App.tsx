@@ -41,13 +41,11 @@ function App() {
 
   // Load game from URL on mount
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedState = urlParams.get('s');
+    const hash = window.location.hash.slice(1); // Remove the '#'
 
-    if (encodedState && config) {
+    if (hash && config) {
       try {
-        // For now, just parse from URL params directly (simplified)
-        const decodedState = JSON.parse(atob(encodedState)) as GameState;
+        const decodedState = JSON.parse(atob(hash)) as GameState;
 
         // Ensure backward compatibility: if old URL without flowState, initialize it
         if (!decodedState.flowState) {
@@ -73,8 +71,7 @@ function App() {
   useEffect(() => {
     if (gameState && !urlState) {
       const encoded = btoa(JSON.stringify(gameState));
-      const newUrl = `${window.location.pathname}?s=${encoded}`;
-      window.history.pushState({}, '', newUrl);
+      window.location.hash = encoded;
     }
   }, [gameState, urlState]);
 
@@ -94,7 +91,7 @@ function App() {
 
     setGameState(newGame);
     setUrlState(null);
-    window.history.pushState({}, '', window.location.pathname);
+    window.location.hash = '';
   }, [config]);
 
   const makeChoice = useCallback((playerNum: 1 | 2, choiceId: string) => {

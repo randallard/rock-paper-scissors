@@ -114,19 +114,33 @@ npm run type-check   # TypeScript validation
 
 ## Deployment
 
-### GitHub Pages
+### GitHub Pages (Automated)
+
+Simply run:
+```bash
+npm run deploy
+```
+
+This will:
+1. Build the project
+2. Push the `dist/` folder to the `gh-pages` branch
+3. GitHub Pages will automatically serve from that branch
+
+**First-time setup**: Make sure GitHub Pages is enabled in your repo settings and set to deploy from the `gh-pages` branch.
+
+### Manual Deployment
 
 1. Build the project:
    ```bash
    npm run build
    ```
 
-2. Deploy the `dist/` directory to GitHub Pages
-
-3. Ensure `vite.config.ts` has correct base path:
-   ```ts
-   base: '/rock-paper-scissors/'
+2. Push the `dist/` directory to the `gh-pages` branch:
+   ```bash
+   git subtree push --prefix dist origin gh-pages
    ```
+
+**Note**: The `vite.config.ts` is already configured with the correct base path: `/rock-paper-scissors/`
 
 ## Customization
 
