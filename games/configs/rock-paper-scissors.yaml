@@ -1,0 +1,130 @@
+# Rock Paper Scissors Game Configuration
+# Classic hand game - rock beats scissors, scissors beats paper, paper beats rock
+
+metadata:
+  id: rock-paper-scissors
+  name: "Rock Paper Scissors"
+  description: "Classic hand game where rock beats scissors, scissors beats paper, and paper beats rock"
+  version: "1.0.0"
+  rulesUrl: "https://en.wikipedia.org/wiki/Rock_paper_scissors"
+  tags:
+    - classic
+    - casual
+    - zero-sum
+
+# Player choices
+choices:
+  - id: rock
+    label: "Rock"
+    description: "Crushes scissors but is covered by paper"
+    icon: "🪨"
+
+  - id: paper
+    label: "Paper"
+    description: "Covers rock but is cut by scissors"
+    icon: "📄"
+
+  - id: scissors
+    label: "Scissors"
+    description: "Cuts paper but is crushed by rock"
+    icon: "✂️"
+
+# Payoff matrix - zero-sum game (winner gets +1, loser gets -1, tie gets 0)
+payoffRules:
+  # Rock vs Rock - Tie
+  - condition:
+      player1: rock
+      player2: rock
+    outcome:
+      player1: 0
+      player2: 0
+    outcomeText: "Both chose rock. It's a tie!"
+
+  # Rock vs Paper - Paper wins
+  - condition:
+      player1: rock
+      player2: paper
+    outcome:
+      player1: -1
+      player2: 1
+    outcomeText: "Paper covers rock. Player 2 wins!"
+
+  # Rock vs Scissors - Rock wins
+  - condition:
+      player1: rock
+      player2: scissors
+    outcome:
+      player1: 1
+      player2: -1
+    outcomeText: "Rock crushes scissors. Player 1 wins!"
+
+  # Paper vs Rock - Paper wins
+  - condition:
+      player1: paper
+      player2: rock
+    outcome:
+      player1: 1
+      player2: -1
+    outcomeText: "Paper covers rock. Player 1 wins!"
+
+  # Paper vs Paper - Tie
+  - condition:
+      player1: paper
+      player2: paper
+    outcome:
+      player1: 0
+      player2: 0
+    outcomeText: "Both chose paper. It's a tie!"
+
+  # Paper vs Scissors - Scissors wins
+  - condition:
+      player1: paper
+      player2: scissors
+    outcome:
+      player1: -1
+      player2: 1
+    outcomeText: "Scissors cuts paper. Player 2 wins!"
+
+  # Scissors vs Rock - Rock wins
+  - condition:
+      player1: scissors
+      player2: rock
+    outcome:
+      player1: -1
+      player2: 1
+    outcomeText: "Rock crushes scissors. Player 2 wins!"
+
+  # Scissors vs Paper - Scissors wins
+  - condition:
+      player1: scissors
+      player2: paper
+    outcome:
+      player1: 1
+      player2: -1
+    outcomeText: "Scissors cuts paper. Player 1 wins!"
+
+  # Scissors vs Scissors - Tie
+  - condition:
+      player1: scissors
+      player2: scissors
+    outcome:
+      player1: 0
+      player2: 0
+    outcomeText: "Both chose scissors. It's a tie!"
+
+# Game progression settings
+progression:
+  totalRounds: 3
+  startingPlayer: 1
+  alternateStarter: false  # Both players choose simultaneously
+  showRunningTotal: true
+
+# UI customization
+ui:
+  primaryColor: "#ef4444"
+  secondaryColor: "#f59e0b"
+  cssClass: "rock-paper-scissors-theme"
+  showPayoffMatrix: false  # More fun when hidden
+  showChoiceDescriptions: true
+  choiceMadeText: "Ready! Waiting for opponent..."
+  resultsHeaderText: "Round Results"
