@@ -28,6 +28,10 @@ interface GameState {
     player1Score: number;
     player2Score: number;
   }>;
+  // Flow state tracking for result chaining
+  flowState: 'waiting_first' | 'waiting_second' | 'results_and_next' | 'complete';
+  whoWentFirst: 1 | 2;
+  pendingResultsForRound?: number;
 }
 
 function App() {
@@ -43,7 +47,20 @@ function App() {
     if (encodedState && config) {
       try {
         // For now, just parse from URL params directly (simplified)
-        const decodedState = JSON.parse(atob(encodedState));
+        const decodedState = JSON.parse(atob(encodedState)) as GameState;
+
+        // Ensure backward compatibility: if old URL without flowState, initialize it
+        if (!decodedState.flowState) {
+          if (decodedState.player1Choice && decodedState.player2Choice) {
+            decodedState.flowState = 'waiting_second';
+          } else if (decodedState.player1Choice || decodedState.player2Choice) {
+            decodedState.flowState = 'waiting_second';
+          } else {
+            decodedState.flowState = 'waiting_first';
+          }
+          decodedState.whoWentFirst = 1;
+        }
+
         setUrlState(decodedState);
         setGameState(decodedState);
       } catch (err) {
@@ -70,6 +87,9 @@ function App() {
       player1Total: 0,
       player2Total: 0,
       rounds: [],
+      flowState: 'waiting_first',
+      whoWentFirst: 1,
+      pendingResultsForRound: undefined,
     };
 
     setGameState(newGame);
@@ -82,14 +102,23 @@ function App() {
 
     const newState = { ...gameState };
 
+    // Detect if this is the 1st or 2nd choice
+    const isFirstChoice = !newState.player1Choice && !newState.player2Choice;
+    const isSecondChoice = (newState.player1Choice && !newState.player2Choice) ||
+                           (!newState.player1Choice && newState.player2Choice);
+
     if (playerNum === 1) {
       newState.player1Choice = choiceId;
     } else {
       newState.player2Choice = choiceId;
     }
 
-    // Check if round is complete
-    if (newState.player1Choice && newState.player2Choice) {
+    if (isFirstChoice) {
+      // First choice in the round
+      newState.flowState = 'waiting_second';
+      newState.whoWentFirst = playerNum;
+    } else if (isSecondChoice && newState.player1Choice && newState.player2Choice) {
+      // Second choice - round complete, calculate results
       const payoff = calculatePayoff(config, newState.player1Choice, newState.player2Choice);
 
       // Add to rounds history
@@ -104,13 +133,40 @@ function App() {
       newState.player1Total += payoff.player1Score;
       newState.player2Total += payoff.player2Score;
 
-      // Move to next round
-      if (newState.currentRound < config.progression.totalRounds) {
-        newState.currentRound += 1;
-        newState.player1Choice = undefined;
-        newState.player2Choice = undefined;
-      }
+      // Store which round's results are pending to show
+      newState.pendingResultsForRound = newState.currentRound;
+
+      // Always show results before completing (allows URL sharing)
+      newState.flowState = 'results_and_next';
     }
+
+    setGameState(newState);
+    setUrlState(null);
+  }, [gameState, config]);
+
+  const makeNextChoiceAfterResults = useCallback((choiceId: string) => {
+    if (!gameState || !config) return;
+
+    const newState = { ...gameState };
+
+    // Advance to next round
+    newState.currentRound += 1;
+    newState.pendingResultsForRound = undefined;
+
+    // Determine who makes the first choice this round
+    const nextStarter = determineRoundStarter(config, newState.currentRound);
+
+    // Set the choice for whoever is making it
+    if (nextStarter === 1) {
+      newState.player1Choice = choiceId;
+      newState.player2Choice = undefined;
+    } else {
+      newState.player1Choice = undefined;
+      newState.player2Choice = choiceId;
+    }
+
+    newState.flowState = 'waiting_second';
+    newState.whoWentFirst = nextStarter;
 
     setGameState(newState);
     setUrlState(null);
@@ -159,8 +215,10 @@ function App() {
   }
 
   // Check if game is complete
-  const isComplete = gameState.currentRound > config.progression.totalRounds;
-  const roundComplete = !!(gameState.player1Choice && gameState.player2Choice);
+  // Game is complete when: final round finished AND receiving player opens the URL
+  const isComplete = gameState.flowState === 'results_and_next' &&
+                     gameState.currentRound >= config.progression.totalRounds &&
+                     urlState !== null;
   const currentRoundStarter = determineRoundStarter(config, gameState.currentRound);
 
   // Game complete
@@ -298,17 +356,34 @@ function App() {
           </>
         )}
 
-        {roundComplete && (
+        {/* Results + Next Choice (chaining flow) */}
+        {gameState.flowState === 'results_and_next' && gameState.pendingResultsForRound && (
           <div style={styles.waiting}>
-            <h2>Round Complete!</h2>
+            <h2>Round {gameState.pendingResultsForRound} Complete!</h2>
             <PayoffSummary
               config={config}
               player1Choice={gameState.player1Choice!}
               player2Choice={gameState.player2Choice!}
             />
-            <button onClick={copyUrlToClipboard} style={styles.button}>
-              Copy URL to Continue
-            </button>
+
+            {gameState.currentRound < config.progression.totalRounds ? (
+              <div style={{ marginTop: '30px' }}>
+                <h3>Now make your choice for Round {gameState.currentRound + 1}:</h3>
+                <DynamicChoiceBoard
+                  config={config}
+                  onChoiceSelected={makeNextChoiceAfterResults}
+                  playerNumber={determineRoundStarter(config, gameState.currentRound + 1)}
+                />
+              </div>
+            ) : (
+              <div style={{ marginTop: '30px' }}>
+                <h3>Final Round Complete!</h3>
+                <p>Share this URL with the other player to see the final results:</p>
+                <button onClick={copyUrlToClipboard} style={styles.button}>
+                  Copy URL for Final Results
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

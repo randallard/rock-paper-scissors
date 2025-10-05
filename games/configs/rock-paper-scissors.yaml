@@ -116,7 +116,7 @@ payoffRules:
 progression:
   totalRounds: 3
   startingPlayer: 1
-  alternateStarter: false  # Both players choose simultaneously
+  alternateStarter: true  # Alternate who goes first each round
   showRunningTotal: true
 
 # UI customization
