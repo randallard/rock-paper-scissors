@@ -2,6 +2,8 @@
 
 A URL-based Rock Paper Scissors game built with the configurable correspondence games framework.
 
+Try it out at [Rock Paper Scissors](https://randallard.github.io/rock-paper-scissors/)
+
 ## Features
 
 - ✅ **Config-driven**: Powered by YAML configuration
